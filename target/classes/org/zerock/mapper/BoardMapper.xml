@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.BoardMapper">
+
+
+
+	<select id="getList" resultType="org.zerock.domain.BoardVO">
+
+		<!-- 부등호가 안먹힐때 아래 CDATA 를 기입. *리스트 보여주기 -->
+   <![CDATA[
+   select * from  board where B_SEQ > 0 
+   ]]>
+	</select>
+
+	
+	<insert id="insert">
+		insert into board(b_seq, b_title, b_content,b_writer)
+		values (seq_board.nextval,#{b_title},#{b_content},#{b_writer})
+	</insert>
+
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="b_seq" order="BEFORE" resultType="int">
+			select seq_board.nextval from dual
+		</selectKey>
+
+		insert into board (b_seq, b_title,b_content,b_writer)
+		values(#{b_seq},#{b_title},#{b_content},#{b_writer})
+	</insert>
+
+	<select id="read" resultType="org.zerock.domain.BoardVO">
+		select * from board where b_seq = #{b_seq}
+	</select>
+
+
+
+	<delete id="delete">
+		delete from board where b_seq = #{b_seq}
+	</delete>
+
+
+
+	<update id="update">
+		update board
+		set b_title = #{b_title},
+		b_content = #{b_content},
+		b_updateDate = sysdate
+		where b_seq = #{b_seq}
+	</update>
+
+	<update id="readCount">
+		update board
+		set readCount = readCount+1
+		where b_seq =
+		#{b_seq}
+	</update>
+
+
+
+	<sql id="criterial">
+
+		<trim prefix="(" suffix=") and">
+			<!-- criteria getTypeArr을 collection으로 getTypeArr()에서 T C를 받으면 그것을 받아 
+				아래 하나씩 실행 -->
+			<foreach collection="typeArr" item="type" separator="or">
+				<if test="type== 'T'.toString()">
+					b_title like '%' || #{keyword} ||'%'
+				</if>
+				<if test="type== 'C'.toString()">
+					b_content like '%' || #{keyword} ||'%'
+				</if>
+				<if test="type== 'W'.toString()">
+					b_writer like '%' || #{keyword} ||'%'
+				</if>
+			</foreach>
+		</trim>
+	</sql>
+
+
+	<select id="getListWithPaging"
+		resultType="org.zerock.domain.BoardVO">
+   
+     <![CDATA[
+     select 
+       b_seq, b_title, b_content, b_writer, b_regdate, b_updateDate , b_replyCnt, readCount
+      from 
+         (
+         select /*+INDEX_DESC(board SYS_C007160) */
+           rownum rn,b_seq, b_title, b_content, b_writer, b_regdate, b_updateDate,
+           b_replyCnt,readCount
+         from 
+           board 
+           
+           where
+            ]]>
+
+		<include refid="criterial"></include>        
+
+		
+               <![CDATA[  
+            rownum <=#{pageNum} * #{amount}
+           )
+     
+      where rn > (#{pageNum}-1)*#{amount}
+     ]]>
+
+	</select>
+
+	<select id="getTotalCount" resultType="int">
+		select count(*) from
+		board where
+		<include refid="criterial"></include>
+		<!-- 위에 sql문 -->
+		b_seq>0
+	</select>
+
+	<update id="updateReplyCnt">
+		update board set b_replyCnt = b_replyCnt + #{amount}
+		where b_seq = #{b_seq}
+	</update>
+
+	<select id="bestlistAll" resultType="org.zerock.domain.BoardVO">
+
+
+		select b_seq, b_title, b_writer, b_content, b_regdate, readCount
+		from (select b_seq, b_title, b_writer, b_regdate, b_content, readCount
+		from board ORDER BY readCount DESC)
+<![CDATA[WHERE ROWNUM <= 10]]>
+
+
+	</select>
+
+
+
+</mapper>

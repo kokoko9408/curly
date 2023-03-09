@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.zerock.mapper.ReplyMapper">
+
+
+	<insert id="insert">
+		insert into reply(r_seq, b_seq, r_reply,r_replyer)
+		values(seq_reply.nextval, #{b_seq},#{r_reply},#{r_replyer})
+	</insert>
+
+	<select id="read" resultType="org.zerock.domain.ReplyVO">
+		select * from reply where r_seq =
+		#{r_seq}
+	</select>
+
+	<delete id="delete">
+		delete reply where r_seq = #{r_seq}
+	</delete>
+
+	<update id="update">
+		update reply
+		set
+		r_reply= #{r_reply},
+		r_replyDate =
+		sysdate
+		where r_seq = #{r_seq}
+	</update>
+
+	<select id="getListWithPaging"
+		resultType="org.zerock.domain.ReplyVO">
+   
+   <![CDATA[
+   select r_seq, b_seq, r_reply, r_replyer, r_replyDate, r_updateDate
+   from 
+   ( select /*+index(reply idx_reply) */
+   		rownum rn, r_seq, b_seq, r_reply, r_replyer, r_replyDate, r_updateDate
+   		from reply
+   		where b_seq = #{b_seq} and 
+   		r_seq >0 
+   		and rownum <= #{cri.pageNum} * #{cri.amount}
+   )
+   where rn > (#{cri.pageNum}-1) * #{cri.amount}
+  
+  ]]>
+	</select>
+
+
+	<select id="getCountByB_seq" resultType="int">
+<![CDATA[
+	select count(r_seq) from reply where b_seq = #{b_seq}
+
+]]>
+	</select>
+
+
+	<!-- <select id = "getListWithPaging" resultType ="org.zerock.domain.ReplyVO"> 
+		select r_seq, b_seq, r_reply, r_replyer, r_replyDate, r_updateDate from reply 
+		where b_seq = #{b_seq} order by r_seq asc </select> -->
+</mapper>
